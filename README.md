@@ -22,7 +22,7 @@ Welcome to OpenSync, your all-in-one solution for PC game save backups. This rob
 To get started with OpenSync, follow these steps:
 
 1. Download the latest release from the [Releases page](https://github.com/mitch344/OpenSync/releases).
-2. Follow the Wiki Guide for installation and configuration.
+2. Follow the [Wiki Guide](https://github.com/mitch344/OpenSync/wiki) for installation and configuration.
 3. Feel free to play around with the tool and source code. The project mostly manipulates the windows file system so there are infinite possibilities.
 
 Happy gaming!
