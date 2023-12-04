@@ -42,15 +42,6 @@ namespace OpenSync
             listViewBackups.Columns.Add("Backup", backupColumnWidth, HorizontalAlignment.Left);
 
             Controls.Add(listViewBackups);
-
-            Button deleteButton = new Button
-            {
-                Text = "Delete",
-                Location = new Point(10, Height - 75),
-                Size = new Size(80, 30),
-            };
-            deleteButton.Click += DeleteButtonClick;
-            Controls.Add(deleteButton);
         }
 
         private void InitializeContextMenu()
@@ -59,7 +50,7 @@ namespace OpenSync
             ToolStripMenuItem showSourceMenuItem = new ToolStripMenuItem("Open in File Explorer");
             showSourceMenuItem.Click += ShowSourceMenuItemClick;
             contextMenu.Items.Add(showSourceMenuItem);
-            listViewBackups.ContextMenuStrip = contextMenu;
+
 
             string folder = Path.Combine(Application.StartupPath, "Icons", "folder_image.ico");
             if (File.Exists(folder))
@@ -67,6 +58,21 @@ namespace OpenSync
                 Icon icon = new Icon(folder);
                 showSourceMenuItem.Image = icon.ToBitmap();
             }
+
+
+            ToolStripMenuItem deleteMenuItem = new ToolStripMenuItem("Delete");
+            deleteMenuItem.Click += DeleteMenuItemClick;
+            contextMenu.Items.Add(deleteMenuItem);
+
+            string deleteIcon = Path.Combine(Application.StartupPath, "Icons", "delete_image.ico");
+            if (File.Exists(folder))
+            {
+                Icon icon = new Icon(deleteIcon);
+                deleteMenuItem.Image = icon.ToBitmap();
+            }
+
+
+            listViewBackups.ContextMenuStrip = contextMenu;
         }
 
         private void ShowSourceMenuItemClick(object sender, EventArgs e)
@@ -151,7 +157,7 @@ namespace OpenSync
             }
         }
 
-        private void DeleteButtonClick(object sender, EventArgs e)
+        private void DeleteMenuItemClick(object sender, EventArgs e)
         {
             if (listViewBackups.SelectedItems.Count > 0)
             {
@@ -180,7 +186,7 @@ namespace OpenSync
             }
             else
             {
-                MessageBox.Show("Please select one or more items to delete.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Please select one item to delete.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
     }

@@ -1,4 +1,5 @@
 using Newtonsoft.Json;
+using System.Diagnostics;
 
 namespace OpenSync
 {
@@ -154,6 +155,18 @@ namespace OpenSync
                 showBackupsItem.Image = icon.ToBitmap();
             }
 
+
+            var openSourcePathItem = new ToolStripMenuItem("Open Source Path in File Explorer");
+            openSourcePathItem.Click += ContextMenuOpenSourcePathItemClick;
+            contextMenu.Items.Add(openSourcePathItem);
+
+            string folder = Path.Combine(Application.StartupPath, "Icons", "folder_image.ico");
+            if (File.Exists(folder))
+            {
+                Icon icon = new Icon(folder);
+                openSourcePathItem.Image = icon.ToBitmap();
+            }
+
             var deleteItem = new ToolStripMenuItem("Delete");
             deleteItem.Click += DeleteListViewItemClick;
             contextMenu.Items.Add(deleteItem);
@@ -260,6 +273,37 @@ namespace OpenSync
                         Icon = Icon
                     };
                     editForm.ShowDialog();
+                }
+            }
+        }
+
+        private void ContextMenuOpenSourcePathItemClick(object sender, EventArgs e)
+        {
+            if (listViewTrackingApps.SelectedItems.Count > 0)
+            {
+                ListViewItem selectedItem = listViewTrackingApps.SelectedItems[0];
+                TrackingApp appToOpen = selectedItem.Tag as TrackingApp;
+
+                if (appToOpen != null)
+                {
+                    string sourcePath = appToOpen.Source;
+
+                    if (File.Exists(sourcePath))
+                    {
+                        string folderPath = Path.GetDirectoryName(sourcePath);
+                        if (!string.IsNullOrEmpty(folderPath) && Directory.Exists(folderPath))
+                        {
+                            Process.Start("explorer.exe", folderPath);
+                        }
+                    }
+                    else if (Directory.Exists(sourcePath))
+                    {
+                        Process.Start("explorer.exe", sourcePath);
+                    }
+                    else
+                    {
+                        MessageBox.Show($"The source path '{sourcePath}' does not exist.", "Path Not Found", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
                 }
             }
         }
