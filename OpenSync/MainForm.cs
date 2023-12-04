@@ -147,14 +147,12 @@ namespace OpenSync
             showBackupsItem.Click += ContextMenuShowBackupsItemClick;
             contextMenu.Items.Add(showBackupsItem);
 
-
             string backupIcon = Path.Combine(Application.StartupPath, "Icons", "backups_image.ico");
             if (File.Exists(backupIcon))
             {
                 Icon icon = new Icon(backupIcon);
                 showBackupsItem.Image = icon.ToBitmap();
             }
-
 
             var openSourcePathItem = new ToolStripMenuItem("Open Source Path in File Explorer");
             openSourcePathItem.Click += ContextMenuOpenSourcePathItemClick;
@@ -186,6 +184,7 @@ namespace OpenSync
                     restoreLatestBackupItem.Visible = true;
                     deleteItem.Visible = true;
                     showBackupsItem.Visible = true;
+                    openSourcePathItem.Visible = true;
                 }
                 else
                 {
@@ -193,6 +192,7 @@ namespace OpenSync
                     restoreLatestBackupItem.Visible = false;
                     deleteItem.Visible = false;
                     showBackupsItem.Visible = false;
+                    openSourcePathItem.Visible = false;
                 }
             };
 
@@ -287,6 +287,7 @@ namespace OpenSync
                 if (appToOpen != null)
                 {
                     string sourcePath = appToOpen.Source;
+                    sourcePath = Environment.ExpandEnvironmentVariables(sourcePath);
 
                     if (File.Exists(sourcePath))
                     {
