@@ -85,7 +85,7 @@ namespace OpenSync
                 {
                     try
                     {
-                        string fullPath = Path.Combine(trackingApp.Destination, selectedBackupFolderName);
+                        string fullPath = Path.Combine(trackingApp.Destination, trackingApp.ProcessToTrack, selectedBackupFolderName);
                         Process.Start("explorer.exe", fullPath);
                     }
                     catch (Exception ex)

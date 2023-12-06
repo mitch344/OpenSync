@@ -1,28 +1,35 @@
-﻿using Newtonsoft.Json;
-using System.Globalization;
-
-namespace OpenSync
+﻿namespace OpenSync
 {
     internal class BackupManager
     {
         public void PerformBackup(TrackingApp trackingApp)
         {
             var sourcePath = Environment.ExpandEnvironmentVariables(trackingApp.Source);
-            var targetDirectory = Path.Combine(Environment.ExpandEnvironmentVariables(trackingApp.Destination), $"{trackingApp.ProcessToTrack}-{DateTime.Now:MMddhhmmsstt}");
+            var processName = trackingApp.ProcessToTrack;
+            var destinationDirectory = Environment.ExpandEnvironmentVariables(trackingApp.Destination);
 
-            if (!Directory.Exists(targetDirectory))
+            var processFolder = Path.Combine(destinationDirectory, processName);
+            if (!Directory.Exists(processFolder))
             {
-                Directory.CreateDirectory(targetDirectory);
+                Directory.CreateDirectory(processFolder);
+            }
+
+            var timestamp = DateTime.Now.ToString("MMddyyyyhhmmsstt");
+            var backupDirectory = Path.Combine(processFolder, timestamp);
+
+            if (!Directory.Exists(backupDirectory))
+            {
+                Directory.CreateDirectory(backupDirectory);
             }
 
             if (File.Exists(sourcePath))
             {
-                var targetPath = Path.Combine(targetDirectory, Path.GetFileName(sourcePath));
+                var targetPath = Path.Combine(backupDirectory, Path.GetFileName(sourcePath));
                 File.Copy(sourcePath, targetPath, true);
             }
             else if (Directory.Exists(sourcePath))
             {
-                var targetPathWithDir = Path.Combine(targetDirectory, new DirectoryInfo(sourcePath).Name);
+                var targetPathWithDir = Path.Combine(backupDirectory, new DirectoryInfo(sourcePath).Name);
                 CopyDirectory(sourcePath, targetPathWithDir);
             }
             else
@@ -31,31 +38,65 @@ namespace OpenSync
             }
         }
 
+
         public static DateTime? ExtractDateTimeFromFolderName(string folderName)
         {
-            string[] parts = folderName.Split('-');
-            if (parts.Length >= 2)
+            if (folderName.Length == 16)
             {
-                string datetimePart = parts[1];
-                if (DateTime.TryParseExact(datetimePart, "MMddhhmmsstt", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime result))
+                string month = folderName.Substring(0, 2);
+                string day = folderName.Substring(2, 2);
+                string year = folderName.Substring(4, 4);
+                string hour = folderName.Substring(8, 2);
+                string minute = folderName.Substring(10, 2);
+                string second = folderName.Substring(12, 2);
+                string amPm = folderName.Substring(14, 2);
+
+                if (int.TryParse(year, out int yyyy) && int.TryParse(month, out int MM) &&
+                    int.TryParse(day, out int dd) && int.TryParse(hour, out int hh) &&
+                    int.TryParse(minute, out int mm) && int.TryParse(second, out int ss))
                 {
-                    return result;
+                    if (amPm == "PM" && hh < 12)
+                    {
+                        hh += 12;
+                    }
+                    else if (amPm == "AM" && hh == 12)
+                    {
+                        hh = 0;
+                    }
+
+                    return new DateTime(yyyy, MM, dd, hh, mm, ss);
                 }
             }
+
             return null;
         }
+
 
         public string GetLatestBackupDirectory(TrackingApp trackingApp)
         {
             string processName = trackingApp.ProcessToTrack;
-            string destinationDirectory = Environment.ExpandEnvironmentVariables(trackingApp.Destination); 
+            string destinationDirectory = Environment.ExpandEnvironmentVariables(trackingApp.Destination);
+            string processFolder = Path.Combine(destinationDirectory, processName);
 
-            string[] backupDirectories = Directory.GetDirectories(destinationDirectory, $"{processName}-*");
-            string latestBackupDirectory = backupDirectories
-                .OrderByDescending(d => Directory.GetCreationTime(d))
-                .FirstOrDefault();
+            if (!Directory.Exists(processFolder))
+            {
+                return null;
+            }
 
-            return latestBackupDirectory;
+            string[] backupDirectories = Directory.GetDirectories(processFolder);
+
+            string latestTimestamp = backupDirectories
+                .Select(folder => ExtractDateTimeFromFolderName(Path.GetFileName(folder)))
+                .Where(date => date.HasValue)
+                .OrderByDescending(date => date)
+                .FirstOrDefault()?.ToString("MMddhhmmsstt");
+
+            if (!string.IsNullOrEmpty(latestTimestamp))
+            {
+                return Path.Combine(processFolder, latestTimestamp);
+            }
+
+            return null;
         }
 
         protected void CopyDirectory(string source, string target)
@@ -86,12 +127,27 @@ namespace OpenSync
         {
             try
             {
-                string backupFolderPath = Path.Combine(Environment.ExpandEnvironmentVariables(trackingApp.Destination), backupFolderName);
+                string processName = trackingApp.ProcessToTrack;
+                string destinationDirectory = Environment.ExpandEnvironmentVariables(trackingApp.Destination);
+                string processFolder = Path.Combine(destinationDirectory, processName);
+                string backupFolderPath = Path.Combine(processFolder, backupFolderName);
 
                 if (Directory.Exists(backupFolderPath))
                 {
                     Directory.Delete(backupFolderPath, true);
                 }
+                else
+                {
+                    throw new InvalidOperationException($"Backup folder '{backupFolderPath}' does not exist.");
+                }
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                throw new InvalidOperationException($"UnauthorizedAccessException: {ex.Message}. Check permissions.");
+            }
+            catch (IOException ex)
+            {
+                throw new InvalidOperationException($"IOException: {ex.Message}. Ensure that no files are locked.");
             }
             catch (Exception ex)
             {
@@ -99,13 +155,15 @@ namespace OpenSync
             }
         }
 
-
         public void RestoreLatestVersion(TrackingApp trackingApp)
         {
             string processName = trackingApp.ProcessToTrack;
             string destinationDirectory = Environment.ExpandEnvironmentVariables(trackingApp.Destination);
 
-            string[] backupDirectories = Directory.GetDirectories(destinationDirectory, $"{processName}-*");
+            string processFolder = Path.Combine(destinationDirectory, processName);
+
+            string[] backupDirectories = Directory.GetDirectories(processFolder);
+
             string latestBackupDirectory = backupDirectories
                 .OrderByDescending(d => Directory.GetCreationTime(d))
                 .FirstOrDefault();
@@ -169,10 +227,18 @@ namespace OpenSync
 
             if (!Directory.Exists(destinationDirectory))
             {
-                MessageBox.Show("Directory Dosen't Exist", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Directory Doesn't Exist", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return backups;
             }
 
-            string[] backupDirectories = Directory.GetDirectories(destinationDirectory, $"{processName}-*");
+            string processFolder = Path.Combine(destinationDirectory, processName);
+
+            if (!Directory.Exists(processFolder))
+            {
+                return backups;
+            }
+
+            string[] backupDirectories = Directory.GetDirectories(processFolder);
 
             foreach (string backupDirectory in backupDirectories)
             {
@@ -182,13 +248,13 @@ namespace OpenSync
             return backups;
         }
 
-
         public void RestoreBackupForProcess(TrackingApp trackingApp, string selectedBackupFolderName)
         {
             string processName = trackingApp.ProcessToTrack;
             string destinationDirectory = Environment.ExpandEnvironmentVariables(trackingApp.Destination);
 
-            string selectedBackupDirectory = Path.Combine(destinationDirectory, selectedBackupFolderName);
+            string processFolder = Path.Combine(destinationDirectory, processName);
+            string selectedBackupDirectory = Path.Combine(processFolder, selectedBackupFolderName);
 
             if (!Directory.Exists(selectedBackupDirectory))
             {
