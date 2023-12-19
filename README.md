@@ -1,7 +1,3 @@
-# OpenSync
-
-Welcome to OpenSync, your all-in-one solution for PC game save backups. This robust desktop application empowers gamers with complete control over their valuable game progress. Unlike managing saves across multiple platforms like Steam, Origin, and Epic Games, OpenSync consolidates all your game saves under one roof. This means you can have them securely stored and easily accessible whenever you need to safeguard your progress, all while keeping the convenience of your favorite gaming platforms. Notably, OpenSync is designed with NAS systems in mind, providing seamless integration and secure storage options for your game saves.
-
 ## Features
 
 - **Process Attachment:** With the "Process Selection UI," you can easily attach a process to a source (file or folder containing the save) and specify a destination for backup storage. You have the option to select a process from a list or manually type in the process name. This flexibility allows you to choose and attach processes as needed for backup.
