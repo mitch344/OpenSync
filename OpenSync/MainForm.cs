@@ -33,7 +33,7 @@ namespace OpenSync
             Text = "OpenSync";
             Width = 600;
             Height = 300;
-            FormBorderStyle = FormBorderStyle.FixedSingle;
+            FormBorderStyle = FormBorderStyle.Sizable;
             MaximizeBox = false;
 
             InitializeSystemTrayLauncher();
@@ -46,7 +46,7 @@ namespace OpenSync
         {
             refreshButton = new Button
             {
-                Text = "Refresh",
+                Text = "Sync",
                 Location = new Point(10, 10)
             };
             refreshButton.Click += RefreshButton_Click;
