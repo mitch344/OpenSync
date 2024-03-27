@@ -165,6 +165,17 @@ namespace OpenSync
                 openSourcePathItem.Image = icon.ToBitmap();
             }
 
+            var manualBackupItem = new ToolStripMenuItem("Perform Manual Backup");
+            manualBackupItem.Click += ContextMenuManualBackupItemClick;
+            contextMenu.Items.Add(manualBackupItem);
+
+            string manualBackupIcon = Path.Combine(Application.StartupPath, "Icons", "backups_image.ico");
+            if (File.Exists(manualBackupIcon))
+            {
+                Icon icon = new Icon(manualBackupIcon);
+                manualBackupItem.Image = icon.ToBitmap();
+            }
+
             var deleteItem = new ToolStripMenuItem("Delete");
             deleteItem.Click += DeleteListViewItemClick;
             contextMenu.Items.Add(deleteItem);
@@ -185,6 +196,7 @@ namespace OpenSync
                     deleteItem.Visible = true;
                     showBackupsItem.Visible = true;
                     openSourcePathItem.Visible = true;
+                    manualBackupItem.Visible = true;
                 }
                 else
                 {
@@ -193,6 +205,7 @@ namespace OpenSync
                     deleteItem.Visible = false;
                     showBackupsItem.Visible = false;
                     openSourcePathItem.Visible = false;
+                    manualBackupItem.Visible = false;
                 }
             };
 
@@ -304,6 +317,28 @@ namespace OpenSync
                     else
                     {
                         MessageBox.Show($"The source path '{sourcePath}' does not exist.", "Path Not Found", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+        private void ContextMenuManualBackupItemClick(object sender, EventArgs e)
+        {
+            if (listViewTrackingApps.SelectedItems.Count > 0)
+            {
+                ListViewItem selectedItem = listViewTrackingApps.SelectedItems[0];
+                TrackingApp appToBackup = selectedItem.Tag as TrackingApp;
+
+                if (appToBackup != null)
+                {
+                    try
+                    {
+                        backupManager.PerformBackup(appToBackup);
+                        MessageBox.Show("Backup created successfully.", "Backup Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Backup failed: {ex.Message}", "Backup Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
             }
